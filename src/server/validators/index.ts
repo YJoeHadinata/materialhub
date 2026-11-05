@@ -140,14 +140,17 @@ export const reorderMoodboardItemsSchema = z.object({
     .min(1, "At least one moodboard item ID is required."),
 });
 
-export const registerTradeAccountSchema = z.object({
-  name: z.string().trim().min(2, "Full name is required.").max(120),
-  email: z.string().trim().email("A valid business email address is required."),
-  password: z
+export const tradeProfileRegistrationSchema = z.object({
+  name: z
     .string()
-    .min(8, "Password must be at least 8 characters.")
-    .max(128),
-  companyName: z.string().trim().min(2, "Company name is required.").max(160),
+    .trim()
+    .min(2, "Full name is required.")
+    .max(120, "Full name must not exceed 120 characters."),
+  companyName: z
+    .string()
+    .trim()
+    .min(2, "Company name is required.")
+    .max(160, "Company name must not exceed 160 characters."),
   companyWebsite: z
     .string()
     .trim()
@@ -160,10 +163,22 @@ export const registerTradeAccountSchema = z.object({
   jobTitle: z
     .string()
     .trim()
-    .max(120)
+    .max(120, "Job title must not exceed 120 characters.")
     .optional()
     .transform((v) => (v && v.length > 0 ? v : undefined)),
 });
+
+export const registerTradeAccountSchema = tradeProfileRegistrationSchema.extend({
+  email: z.string().trim().email("A valid business email address is required."),
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters.")
+    .max(128, "Password must not exceed 128 characters."),
+});
+
+export type RegisterTradeAccountInput = z.infer<
+  typeof registerTradeAccountSchema
+>;
 
 export const updateProfileSchema = z.object({
   name: z.string().trim().min(2, "Full name is required.").max(120),

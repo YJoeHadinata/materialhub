@@ -1,8 +1,13 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
+import { APIError, createAuthMiddleware } from "better-auth/api";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
+import {
+  registerTradeAccountSchema,
+  tradeProfileRegistrationSchema,
+} from "@/server/validators";
 
 export function getAuthSecret(env: Partial<NodeJS.ProcessEnv> = process.env): string {
   const secret = env.BETTER_AUTH_SECRET;
@@ -102,6 +107,54 @@ export const auth = betterAuth({
         required: false,
         defaultValue: "PENDING",
         input: false,
+      },
+    },
+  },
+  hooks: {
+    before: createAuthMiddleware(async (ctx) => {
+      if (ctx.path === "/sign-up/email") {
+        const body = ctx.body as Record<string, unknown> | undefined;
+        if (!body || typeof body !== "object") {
+          throw new APIError("BAD_REQUEST", {
+            message: "Registration payload is required.",
+          });
+        }
+
+        const profileResult = tradeProfileRegistrationSchema.safeParse(body);
+        if (!profileResult.success) {
+          throw new APIError("BAD_REQUEST", {
+            message:
+              profileResult.error.issues[0]?.message ??
+              "Invalid trade account profile.",
+          });
+        }
+
+        if ("email" in body || "password" in body) {
+          const fullResult = registerTradeAccountSchema.safeParse(body);
+          if (!fullResult.success) {
+            throw new APIError("BAD_REQUEST", {
+              message:
+                fullResult.error.issues[0]?.message ??
+                "Invalid registration details.",
+            });
+          }
+        }
+      }
+    }),
+  },
+  databaseHooks: {
+    user: {
+      create: {
+        before: async (user) => {
+          const profileResult = tradeProfileRegistrationSchema.safeParse(user);
+          if (!profileResult.success) {
+            throw new APIError("BAD_REQUEST", {
+              message:
+                profileResult.error.issues[0]?.message ??
+                "Invalid trade account profile.",
+            });
+          }
+        },
       },
     },
   },
