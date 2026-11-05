@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  assertMoodboardOwnership,
   requireAdministrator,
   requireApprovedTradeMember,
   requireAuthenticatedUser,
@@ -7,6 +8,7 @@ import {
   requireApprovedTradeMemberPage,
   requireAuthenticatedUserPage,
 } from "@/server/authorization";
+import { AppError } from "@/lib/utils/api-response";
 import type { AuthenticatedUser } from "@/types";
 
 const mockRedirect = vi.fn();
@@ -146,6 +148,29 @@ describe("Authorization Guards and Page Guards", () => {
       it("allows active ADMIN", async () => {
         const user = await requireAdministrator(undefined, adminUser);
         expect(user.id).toBe(adminUser.id);
+      });
+    });
+
+    describe("assertMoodboardOwnership", () => {
+      it("succeeds silently when owner ID matches actor ID", () => {
+        expect(() =>
+          assertMoodboardOwnership("owner-123", "owner-123"),
+        ).not.toThrow();
+      });
+
+      it("throws a 403 AppError when actor attempts cross-user access", () => {
+        let thrownError: unknown;
+        try {
+          assertMoodboardOwnership("owner-123", "attacker-456");
+        } catch (err) {
+          thrownError = err;
+        }
+
+        expect(thrownError).toBeInstanceOf(AppError);
+        const appError = thrownError as AppError;
+        expect(appError.statusCode).toBe(403);
+        expect(appError.code).toBe("FORBIDDEN");
+        expect(appError.message).toMatch(/permission to access or modify/i);
       });
     });
   });
