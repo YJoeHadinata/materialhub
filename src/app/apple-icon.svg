@@ -1,0 +1,10 @@
+<svg viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- MaterialHub Apple Touch Icon (180x180) -->
+  <rect width="180" height="180" rx="36" fill="#0c0a09"/>
+  <!-- Top polished specimen plane -->
+  <path d="M90 35L144 64.5L90 94L36 64.5L90 35Z" fill="#ffffff"/>
+  <!-- Calibrated reveal layer -->
+  <path d="M36 80L90 109.5L144 80V96L90 125.5L36 96V80Z" fill="#d6d3d1"/>
+  <!-- Structural foundation substrate -->
+  <path d="M36 112L90 141.5L144 112V128L90 157.5L36 128V112Z" fill="#a8a29e"/>
+</svg>

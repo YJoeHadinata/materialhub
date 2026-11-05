@@ -1,0 +1,12 @@
+<svg viewBox="0 0 240 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Mark (32x32) -->
+  <g transform="translate(4, 4)">
+    <rect width="32" height="32" rx="4" fill="#0c0a09"/>
+    <path d="M16 6L25.5 11.2L16 16.4L6.5 11.2L16 6Z" fill="#ffffff"/>
+    <path d="M6.5 14L16 19.2L25.5 14V16.8L16 22L6.5 16.8V14Z" fill="#d6d3d1"/>
+    <path d="M6.5 19.6L16 24.8L25.5 19.6V22.4L16 27.6L6.5 22.4V19.6Z" fill="#a8a29e"/>
+  </g>
+  <!-- Wordmark -->
+  <text x="46" y="21" fill="#0c0a09" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="700" letter-spacing="0.1em">MATERIALHUB</text>
+  <text x="46" y="32" fill="#78716c" font-family="ui-monospace, monospace" font-size="9" font-weight="500" letter-spacing="0.15em">SPECIFICATION LIBRARY</text>
+</svg>

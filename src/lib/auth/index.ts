@@ -18,11 +18,32 @@ export const auth = betterAuth({
     process.env.BETTER_AUTH_SECRET ??
     "materialhub-local-dev-secret-key-2026-architectural-b2b-platform",
   baseURL: process.env.BETTER_AUTH_URL ?? "http://localhost:3000",
+  trustedOrigins: [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    ...(process.env.BETTER_AUTH_URL ? [process.env.BETTER_AUTH_URL] : []),
+    ...(process.env.NEXT_PUBLIC_APP_URL ? [process.env.NEXT_PUBLIC_APP_URL] : []),
+  ],
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 8,
     maxPasswordLength: 128,
     autoSignIn: true,
+  },
+  rateLimit: {
+    enabled: true,
+    window: 60,
+    max: 100,
+    customRules: {
+      "/sign-in/email": {
+        window: 60,
+        max: 40,
+      },
+      "/sign-up/email": {
+        window: 60,
+        max: 40,
+      },
+    },
   },
   advanced: {
     database: {

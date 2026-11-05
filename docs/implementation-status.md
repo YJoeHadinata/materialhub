@@ -9,12 +9,12 @@
 
 | Phase | Description | Status | Notes |
 |---|---|---|---|
-| Phase 0 | Inspection and Technology Audit | COMPLETED | Environment inspected, live npm registry versions verified, compatibility matrix documented in `docs/technology-version-audit.md`. |
-| Phase 1 | Application Foundation | IN PROGRESS | Next.js 16.4.5, React 19.3.1, TypeScript 6.0.3, Tailwind CSS 4.3.4, Drizzle ORM 0.45.4, PostgreSQL 18.6, Better Auth 1.7.15. |
-| Phase 2 | Public Catalogue | PENDING | Homepage, Catalogue grid, search/filter/sort/pagination, Product Detail, Gallery, Seed data (40+ products). |
-| Phase 3 | Customer Workspace | PENDING | Trade registration, login, approval gating, Customer Dashboard, Moodboard CRUD & item reordering. |
-| Phase 4 | Administration | PENDING | Admin Dashboard, Product CRUD, Category/Finish/Application CRUD, Image upload & management, CSV Bulk Import, Trade Account Review, Audit Logs. |
-| Phase 5 | Production Readiness | PENDING | Unit, Integration, and Playwright E2E tests, responsive/iPad verification, accessibility review, CI/CD, and full documentation suite. |
+| Phase 0 | Inspection and Technology Audit | COMPLETED | Environment inspected (`macOS Darwin 27.0.0 arm64`, `Node.js v26.12.1`, `npm 11.20.0`, `PostgreSQL 18.6`), live npm registry versions verified, compatibility matrix documented in `docs/technology-version-audit.md`. |
+| Phase 1 | Application Foundation | COMPLETED | Next.js `16.4.5`, React `19.3.1`, TypeScript `6.0.3`, Tailwind CSS `4.3.4`, Drizzle ORM `0.45.4` (13 tables + enums + migrations), PostgreSQL `18.6`, Better Auth `1.7.15`, centralized authorization (`src/server/authorization/`), Zod 4 validators, and S3/Local storage abstraction. |
+| Phase 2 | Public Catalogue | COMPLETED | Homepage (`/`), Catalogue (`/catalogue`) with server-side search, combined filters, sorting, and pagination, Product Detail (`/products/[slug]`) with interactive multi-image gallery, and idempotent seed script (`41` products across `5` material types, `8` finishes, `8` applications). |
+| Phase 3 | Customer Workspace | COMPLETED | Trade registration (`/register`), login (`/login`), server-side trade approval gating, Customer Profile (`/account`), Moodboard list (`/moodboards`), and Moodboard detail workspace (`/moodboards/[id]`) with item additions, duplicate prevention, removal, and transactional sequence reordering. |
+| Phase 4 | Administration | COMPLETED | Admin Dashboard (`/admin/dashboard`), Product CRUD & image upload (`/admin/products`, `/admin/products/new`, `/admin/products/[id]/edit`), Taxonomy CRUD (`/admin/categories`), Trade Account Review (`/admin/trade-accounts`), Transactional CSV Bulk Import (`/admin/imports`), and Audit Logs. |
+| Phase 5 | Production Readiness | COMPLETED | Unit, PostgreSQL Integration, and Playwright E2E tests (Desktop `1440x900` & iPad `820x1180`), accessibility & zero-emoji verification, GitHub Actions CI/CD workflow (`.github/workflows/ci.yml`), screenshots (`docs/screenshots/`), and full documentation suite (`README.md` + `docs/*`). |
 
 ---
 
@@ -28,9 +28,15 @@
 
 ---
 
-## 3. Test Execution Log
+## 3. Test Execution & Quality Gate Log
 
-*Tests will be logged here with exact commands and exit codes as each phase is verified.*
+| Gate | Command | Exit Code | Status | Summary |
+|---|---|---|---|---|
+| ESLint | `npm run lint` | `0` | Passed | 0 errors, 0 warnings across all `.ts` and `.tsx` files |
+| TypeScript | `npm run typecheck` | `0` | Passed | Strict type check (`tsc --noEmit`) passed with 0 errors |
+| Vitest Unit & Integration | `DATABASE_URL="postgresql://localhost:5432/materialhub_test" npm test` | `0` | Passed | 2 test files, 23 passed tests (18 unit tests + 5 PostgreSQL integration tests) |
+| Production Build | `npm run build` | `0` | Passed | Next.js 16.4.5 Turbopack production build succeeded for all routes |
+| Playwright E2E | `npm run test:e2e` | `0` | Passed | 8 passed (4 end-to-end journeys verified on both `chromium-desktop` 1440x900 and `chromium-ipad` 820x1180) |
 
 ---
 
@@ -38,4 +44,4 @@
 
 - **Production Object Storage Credentials:** S3-compatible storage integration is implemented via `@aws-sdk/client-s3`. In local development without external S3 bucket credentials, the storage abstraction uses the development adapter (`STORAGE_DRIVER=local` serving via `/api/v1/storage/[...key]`). For production deployment on Vercel, `OBJECT_STORAGE_ENDPOINT`, `OBJECT_STORAGE_BUCKET`, `OBJECT_STORAGE_ACCESS_KEY`, and `OBJECT_STORAGE_SECRET_KEY` must be configured.
 - **Email Delivery for Password Reset:** Password reset token generation is supported by Better Auth, but live transactional email delivery requires an external SMTP/email provider API key in production.
-- **External Cloud Deployment:** GitHub Actions CI/CD workflow and Vercel configuration are included and validated locally via `npm run build`, `npm run lint`, `npm run typecheck`, `npm run test`, and `npm run test:e2e`. Live deployment requires linking a GitHub remote and Vercel project tokens.
+- **External Cloud Deployment:** GitHub Actions CI/CD workflow and Vercel configuration are included and validated locally via `npm run build`, `npm run lint`, `npm run typecheck`, `npm test`, and `npm run test:e2e`. Live deployment requires linking a GitHub remote and Vercel project tokens.

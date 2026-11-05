@@ -2,6 +2,8 @@
   "name": "materialhub",
   "version": "1.0.0",
   "private": true,
+  "author": "Yoshua Joe <yoshuajoe26@gmail.com>",
+  "license": "UNLICENSED",
   "description": "MaterialHub — B2B Architectural Materials Catalogue & Moodboard Platform",
   "scripts": {
     "dev": "next dev",
