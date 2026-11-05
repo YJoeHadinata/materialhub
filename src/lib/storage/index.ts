@@ -20,6 +20,7 @@ export interface UploadFileInput {
   sizeBytes: number;
   buffer: Buffer;
   folder?: string;
+  customKey?: string;
 }
 
 export interface StoredFileResult {
@@ -31,6 +32,20 @@ export interface StorageProvider {
   upload(input: UploadFileInput): Promise<StoredFileResult>;
   delete(storageKey: string): Promise<void>;
   getSignedUploadUrl?(key: string, contentType: string): Promise<string>;
+}
+
+export function deriveVariantStorageKeys(storageKey: string): string[] {
+  const ext = path.extname(storageKey);
+  const withoutExt = storageKey.slice(0, -ext.length || undefined);
+  const basePrefix = withoutExt.replace(/-\d+w$/, "");
+
+  const keys = new Set<string>();
+  keys.add(storageKey);
+  keys.add(`${basePrefix}.webp`);
+  for (const w of [480, 960, 1600]) {
+    keys.add(`${basePrefix}-${w}w.webp`);
+  }
+  return Array.from(keys).sort();
 }
 
 export function validateImageUploadInput(input: {
@@ -72,8 +87,11 @@ export function validateImageUploadInput(input: {
   }
 }
 
-function buildSafeStorageKey(fileName: string, folder = "products"): string {
-  const ext = path.extname(fileName).toLowerCase() || ".jpg";
+export function buildSafeStoragePrefix(
+  fileName: string,
+  folder = "products",
+): string {
+  const ext = path.extname(fileName).toLowerCase();
   const base = path
     .basename(fileName, ext)
     .toLowerCase()
@@ -81,7 +99,16 @@ function buildSafeStorageKey(fileName: string, folder = "products"): string {
     .replace(/-+/g, "-")
     .slice(0, 48);
   const randomSuffix = crypto.randomBytes(8).toString("hex");
-  return `${folder}/${Date.now()}-${base || "asset"}-${randomSuffix}${ext}`;
+  return `${folder}/${Date.now()}-${base || "asset"}-${randomSuffix}`;
+}
+
+export function buildSafeStorageKey(
+  fileName: string,
+  folder = "products",
+): string {
+  const ext = path.extname(fileName).toLowerCase() || ".webp";
+  const prefix = buildSafeStoragePrefix(fileName, folder);
+  return `${prefix}${ext}`;
 }
 
 export class S3StorageProvider implements StorageProvider {
@@ -126,10 +153,9 @@ export class S3StorageProvider implements StorageProvider {
 
   async upload(input: UploadFileInput): Promise<StoredFileResult> {
     validateImageUploadInput(input);
-    const storageKey = buildSafeStorageKey(
-      input.fileName,
-      input.folder ?? "products",
-    );
+    const storageKey =
+      input.customKey ??
+      buildSafeStorageKey(input.fileName, input.folder ?? "products");
 
     await this.client.send(
       new PutObjectCommand({
@@ -149,10 +175,19 @@ export class S3StorageProvider implements StorageProvider {
   }
 
   async delete(storageKey: string): Promise<void> {
-    await this.client.send(
-      new DeleteObjectCommand({
-        Bucket: this.bucket,
-        Key: storageKey,
+    const keysToDelete = deriveVariantStorageKeys(storageKey);
+    await Promise.all(
+      keysToDelete.map(async (key) => {
+        try {
+          await this.client.send(
+            new DeleteObjectCommand({
+              Bucket: this.bucket,
+              Key: key,
+            }),
+          );
+        } catch {
+          // Ignore if variant key is not found
+        }
       }),
     );
   }
@@ -182,10 +217,9 @@ export class LocalDevelopmentStorageProvider implements StorageProvider {
 
   async upload(input: UploadFileInput): Promise<StoredFileResult> {
     validateImageUploadInput(input);
-    const storageKey = buildSafeStorageKey(
-      input.fileName,
-      input.folder ?? "products",
-    );
+    const storageKey =
+      input.customKey ??
+      buildSafeStorageKey(input.fileName, input.folder ?? "products");
     const rootWithSep = this.baseDir.endsWith(path.sep)
       ? this.baseDir
       : `${this.baseDir}${path.sep}`;
@@ -208,15 +242,21 @@ export class LocalDevelopmentStorageProvider implements StorageProvider {
     const rootWithSep = this.baseDir.endsWith(path.sep)
       ? this.baseDir
       : `${this.baseDir}${path.sep}`;
-    const targetPath = path.resolve(this.baseDir, storageKey);
-    if (!targetPath.startsWith(rootWithSep)) {
-      return;
-    }
-    try {
-      await fs.unlink(targetPath);
-    } catch {
-      // Ignore if file already removed in local dev
-    }
+    const keysToDelete = deriveVariantStorageKeys(storageKey);
+
+    await Promise.all(
+      keysToDelete.map(async (key) => {
+        const targetPath = path.resolve(this.baseDir, key);
+        if (!targetPath.startsWith(rootWithSep)) {
+          return;
+        }
+        try {
+          await fs.unlink(targetPath);
+        } catch {
+          // Ignore if file already removed in local dev
+        }
+      }),
+    );
   }
 }
 

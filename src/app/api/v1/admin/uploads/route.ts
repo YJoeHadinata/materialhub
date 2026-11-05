@@ -1,3 +1,4 @@
+import path from "node:path";
 import {
   AppError,
   apiSuccess,
@@ -5,7 +6,12 @@ import {
 } from "@/lib/utils/api-response";
 import { enforceRateLimit } from "@/lib/utils/rate-limit";
 import { requireAdministrator } from "@/server/authorization";
-import { getStorageProvider, validateImageUploadInput } from "@/lib/storage";
+import {
+  buildSafeStoragePrefix,
+  getStorageProvider,
+  validateImageUploadInput,
+} from "@/lib/storage";
+import { processAndOptimizeImage } from "@/lib/storage/image-processing";
 
 export async function POST(request: Request) {
   try {
@@ -33,22 +39,61 @@ export async function POST(request: Request) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    const provider = getStorageProvider();
-    const stored = await provider.upload({
-      fileName: file.name,
-      mimeType: file.type,
-      sizeBytes: file.size,
+    // Decode and validate binary content via sharp, strip EXIF, and generate responsive variants
+    const processed = await processAndOptimizeImage(
       buffer,
+      file.type,
+      file.name,
+    );
+
+    const provider = getStorageProvider();
+    const basePrefix = buildSafeStoragePrefix(file.name, "products");
+    const rawBaseName = path.basename(file.name, path.extname(file.name));
+
+    // Upload primary WebP image
+    const primaryStored = await provider.upload({
+      fileName: `${rawBaseName}.webp`,
+      mimeType: "image/webp",
+      sizeBytes: processed.primary.sizeBytes,
+      buffer: processed.primary.buffer,
       folder: "products",
+      customKey: `${basePrefix}.webp`,
     });
+
+    // Upload deterministic responsive WebP variants
+    const storedVariants = await Promise.all(
+      processed.variants.map(async (v) => {
+        const variantKey = `${basePrefix}-${v.width}w.webp`;
+        const stored = await provider.upload({
+          fileName: `${rawBaseName}-${v.width}w.webp`,
+          mimeType: "image/webp",
+          sizeBytes: v.sizeBytes,
+          buffer: v.buffer,
+          folder: "products",
+          customKey: variantKey,
+        });
+
+        return {
+          width: v.width,
+          height: v.height,
+          format: "webp" as const,
+          storageKey: stored.storageKey,
+          imageUrl: stored.imageUrl,
+          sizeBytes: v.sizeBytes,
+        };
+      }),
+    );
 
     return apiSuccess(
       {
-        storageKey: stored.storageKey,
-        imageUrl: stored.imageUrl,
-        fileName: file.name,
-        mimeType: file.type,
-        sizeBytes: file.size,
+        storageKey: primaryStored.storageKey,
+        imageUrl: primaryStored.imageUrl,
+        fileName: `${rawBaseName}.webp`,
+        mimeType: "image/webp",
+        sizeBytes: processed.primary.sizeBytes,
+        width: processed.primary.width,
+        height: processed.primary.height,
+        variants: storedVariants,
       },
       {},
       201,

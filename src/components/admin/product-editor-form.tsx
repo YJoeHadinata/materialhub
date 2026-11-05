@@ -118,8 +118,8 @@ export function ProductEditorForm({
             altText: alt,
             isPrimary: prev.length === 0,
             sortOrder: prev.length,
-            width: 1200,
-            height: 900,
+            width: typeof json.data.width === "number" ? json.data.width : 1200,
+            height: typeof json.data.height === "number" ? json.data.height : 900,
           },
         ]);
         setNewImageAlt("");
