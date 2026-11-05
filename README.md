@@ -1,6 +1,6 @@
 # MaterialHub — B2B Architectural Materials Catalogue & Moodboard Platform
 
-MaterialHub is a production-oriented B2B web application designed for architects, interior designers, property developers, and specification teams to discover architectural materials, inspect calibrated technical specifications, and curate project-specific moodboard palettes.
+MaterialHub is a B2B web application built with a production-style architecture, with known limitations, designed for architects, interior designers, property developers, and specification teams to discover architectural materials, inspect calibrated technical specifications, and curate project-specific moodboard palettes.
 
 > **Portfolio Project Notice:** MaterialHub is an independent personal portfolio demonstration project designed and developed by **Yoshua Joe** to showcase the technical capabilities required for a Senior Full-Stack Web Developer role maintaining and scaling a B2B architectural materials platform. It demonstrates modern Next.js App Router architecture, strict TypeScript, PostgreSQL database design with Drizzle ORM, multi-role authentication and server-side authorization with Better Auth, parametric catalogue search, transaction-safe CSV imports, and comprehensive test coverage (Vitest & Playwright E2E). This repository is published strictly for technical evaluation and non-commercial portfolio presentation; commercial use or redistribution is not permitted. All branding, catalogue SKUs, and specifications are fictional and created independently.
 
@@ -189,10 +189,16 @@ npm run test:e2e
 
 ---
 
-## 7. Known Limitations & External Configuration
+## 7. Known Limitations & Architecture Boundaries
 
-1. **Object Storage Provider in Local Mode:** When S3 credentials (`OBJECT_STORAGE_ACCESS_KEY`, `OBJECT_STORAGE_SECRET_KEY`, `OBJECT_STORAGE_ENDPOINT`) are not set, `STORAGE_DRIVER="local"` uses `LocalDevelopmentStorageProvider` and serves uploaded images via `/api/v1/storage/[...key]`. In production on Vercel, set `STORAGE_DRIVER="s3"` with managed S3/R2 bucket credentials.
-2. **Synchronous CSV Import Limit:** Bulk CSV import processes up to 500 rows per synchronous transaction (`MAX_CSV_IMPORT_ROWS = 500`), which covers standard B2B specification batches without requiring external background queue infrastructure.
+MaterialHub is engineered with a production-style architecture, with known limitations documented transparently:
+
+1. **In-Memory Rate Limiting:** Rate limiting on sensitive endpoints (`/api/v1/admin/products/import`, `/api/v1/admin/uploads`, and Better Auth auth endpoints) is implemented in-memory using an in-process sliding window (`src/lib/utils/rate-limit.ts`). This is scoped per process instance and is not distributed across serverless instances or multi-region workers. Production serverless deployments require an external key-value store such as Redis or Upstash.
+2. **No Password Reset or Email Verification Flow:** Better Auth is configured for direct email and password authentication. No self-service password reset flow, reset token dispatch, or email verification flows are implemented in the UI or backend services. User onboarding relies on direct trade registration and administrator status approval.
+3. **Upload Content Validation:** Image upload verification (`validateImageUploadInput` in `src/lib/storage/index.ts`) strictly allow-lists file extensions (`.jpg`, `.jpeg`, `.png`, `.webp`), request MIME types (`image/jpeg`, `image/png`, `image/webp`), and file size limits (<= 10 MB). It does not perform binary magic-byte inspection on file buffers.
+4. **Object Storage Provider in Local Mode:** When S3 credentials (`OBJECT_STORAGE_ACCESS_KEY`, `OBJECT_STORAGE_SECRET_KEY`, `OBJECT_STORAGE_ENDPOINT`) are not set, `STORAGE_DRIVER="local"` uses `LocalDevelopmentStorageProvider` and serves uploaded images via `/api/v1/storage/[...key]`. If `STORAGE_DRIVER="s3"` is configured with missing credentials, initialization fails immediately with an explicit error. In production, set `STORAGE_DRIVER="s3"` with managed S3 or Cloudflare R2 bucket credentials.
+5. **Synchronous CSV Import Limit:** Bulk CSV import processes up to 500 rows per synchronous transaction (`MAX_CSV_IMPORT_ROWS = 500`), covering standard B2B architectural batches without external background workers. Larger catalogues require an asynchronous job queue (e.g. BullMQ or AWS SQS).
+6. **Continuous Integration Scope:** The GitHub Actions pipeline (`.github/workflows/ci.yml`) executes ESLint, TypeScript strict typechecking, database migrations against PostgreSQL 18, Vitest unit and integration suites, and the production Next.js build. Full Playwright E2E suites are run locally against the test database with browser engines installed.
 
 ---
 

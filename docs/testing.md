@@ -6,14 +6,13 @@ MaterialHub employs a three-tier automated testing strategy using **Vitest 5.1.0
 
 ## 1. Test Suites
 
-### 1.1 Unit Tests (`tests/unit/validators-and-rules.test.ts`)
+### 1.1 Unit Tests (`tests/unit/*.test.ts`)
 Covers:
-- Product schema validation, SKU format rules, kebab-case slug validation, and positive MOQ requirements.
-- Catalogue query parameter validation and pagination bounds (`pageSize <= 48`).
-- RFC 4180 CSV parser (quoted fields, commas inside quotes, escaped quotes) and header/row validation.
-- Moodboard ownership assertions (`assertMoodboardOwnership`).
-- Trade account role and status access rules (`canAccessTradeWorkspace`, `isAdminUser`, `resolveTradeStatusAuditAction`).
-- Image upload MIME type, file extension, and 10 MB size limit validation.
+- **Validators & Rules (`validators-and-rules.test.ts`):** Product schema validation, SKU format rules, kebab-case slug validation, positive MOQ requirements, catalogue query parameter bounds, RFC 4180 CSV parser diagnostics, and image upload format limits.
+- **Production Auth Secret Guard (`auth-secret.test.ts`):** Verifies that `BETTER_AUTH_SECRET` is strictly enforced with at least 32 characters in production runtime, while allowing development fallbacks and production build-phase placeholders.
+- **Storage Provider & Local Route (`storage.test.ts`):** Verifies fail-loud error throwing on misconfigured S3 environments, production warnings on local driver, `baseDir + path.sep` boundary containment on upload/delete, and `GET /api/v1/storage/[...key]` security rules (rejecting path traversal `../`, non-image extensions, and non-local drivers).
+- **Authorization & Page Guards (`authorization-guards.test.ts`):** Verifies that `requireAdministrator`, `requireApprovedTradeMember`, `requireAuthenticatedUser`, and page-level guards (`requireAdminPage`, `requireApprovedTradeMemberPage`, `requireAuthenticatedUserPage`) reject unauthenticated, `MEMBER`, and `SUSPENDED` users, and permit `ADMIN` and `APPROVED` members.
+- **Server-Side Registration Hook (`registration-hook.test.ts`):** Verifies that Better Auth server hooks reject invalid trade registration payloads (including `javascript:` URLs, oversized company names > 160 characters, and short names) with `400 Bad Request`.
 
 ### 1.2 Integration Tests (`tests/integration/services.integration.test.ts`)
 Runs against a real PostgreSQL test database (`materialhub_test`):
