@@ -31,7 +31,7 @@ playwright/.cache/
 
 # Local development upload storage
 .local-storage/
-storage/
+/storage/
 
 # TypeScript & Next build info
 *.tsbuildinfo

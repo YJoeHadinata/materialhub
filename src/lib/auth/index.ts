@@ -4,7 +4,7 @@ import { nextCookies } from "better-auth/next-js";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 
-export function getAuthSecret(env: NodeJS.ProcessEnv = process.env): string {
+export function getAuthSecret(env: Partial<NodeJS.ProcessEnv> = process.env): string {
   const secret = env.BETTER_AUTH_SECRET;
   const isProduction = env.NODE_ENV === "production";
   const isBuildPhase = env.NEXT_PHASE === "phase-production-build";
