@@ -11,6 +11,10 @@ import {
   LocalDevelopmentStorageProvider,
   deriveVariantStorageKeys,
 } from "@/lib/storage";
+import {
+  getResponsiveVariantUrl,
+  isSvgImageUrl,
+} from "@/lib/utils/image";
 import { AppError } from "@/lib/utils/api-response";
 
 describe("Image Optimization & Processing Pipeline (Step 2)", () => {
@@ -327,6 +331,35 @@ describe("Image Optimization & Processing Pipeline (Step 2)", () => {
       }
 
       await fs.rm(tempDir, { recursive: true, force: true });
+    });
+  });
+
+  describe("5. Image Utility Helpers", () => {
+    it("identifies SVG data URIs and file extensions correctly", () => {
+      expect(isSvgImageUrl("data:image/svg+xml;utf8,<svg></svg>")).toBe(true);
+      expect(isSvgImageUrl("/icons/logo.svg")).toBe(true);
+      expect(isSvgImageUrl("https://cdn.example.com/vector.svg?v=1")).toBe(true);
+      expect(isSvgImageUrl("https://cdn.example.com/photo.webp")).toBe(false);
+      expect(isSvgImageUrl(null)).toBe(false);
+      expect(isSvgImageUrl(undefined)).toBe(false);
+    });
+
+    it("derives responsive variant URLs from primary image URLs", () => {
+      const primaryUrl =
+        "http://localhost:3000/api/v1/storage/products/123-granite.webp";
+      expect(getResponsiveVariantUrl(primaryUrl, 480)).toBe(
+        "http://localhost:3000/api/v1/storage/products/123-granite-480w.webp",
+      );
+      expect(getResponsiveVariantUrl(primaryUrl, 960)).toBe(
+        "http://localhost:3000/api/v1/storage/products/123-granite-960w.webp",
+      );
+      expect(getResponsiveVariantUrl(primaryUrl, 1600)).toBe(
+        "http://localhost:3000/api/v1/storage/products/123-granite-1600w.webp",
+      );
+
+      // Leaves SVGs and data URIs untouched
+      const svgUrl = "data:image/svg+xml;utf8,<svg></svg>";
+      expect(getResponsiveVariantUrl(svgUrl, 480)).toBe(svgUrl);
     });
   });
 });
