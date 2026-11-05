@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, Plus, Upload } from "lucide-react";
+import { requireAdminPage } from "@/server/authorization";
 import { getAdminDashboardMetrics } from "@/server/services/trade-account.service";
 import { listRecentAuditLogs } from "@/server/services/audit.service";
 import { formatDate } from "@/lib/utils/format";
@@ -7,6 +8,11 @@ import { formatDate } from "@/lib/utils/format";
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboardPage() {
+  const auth = await requireAdminPage();
+  if (!auth.authorized) {
+    return auth.response;
+  }
+
   const [metrics, auditLogs] = await Promise.all([
     getAdminDashboardMetrics(),
     listRecentAuditLogs(25),

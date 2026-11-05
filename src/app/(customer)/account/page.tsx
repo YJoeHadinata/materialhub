@@ -1,7 +1,9 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { ArrowRight, FolderKanban, ShieldCheck } from "lucide-react";
-import { canAccessTradeWorkspace, getCurrentUser } from "@/server/authorization";
+import {
+  canAccessTradeWorkspace,
+  requireAuthenticatedUserPage,
+} from "@/server/authorization";
 import { listUserMoodboards } from "@/server/services/moodboard.service";
 import { Badge } from "@/components/ui/badge";
 import { ProfileEditor } from "@/components/moodboards/profile-editor";
@@ -10,10 +12,7 @@ import { WorkspaceNotice } from "@/components/ui/workspace-notice";
 export const dynamic = "force-dynamic";
 
 export default async function AccountPage() {
-  const currentUser = await getCurrentUser();
-  if (!currentUser) {
-    redirect("/login");
-  }
+  const currentUser = await requireAuthenticatedUserPage();
 
   const isApproved = canAccessTradeWorkspace(currentUser);
   const moodboards = isApproved

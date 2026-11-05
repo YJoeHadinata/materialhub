@@ -1,8 +1,14 @@
+import { requireAdminPage } from "@/server/authorization";
 import { CsvBulkImporter } from "@/components/admin/csv-bulk-importer";
 
 export const dynamic = "force-dynamic";
 
-export default function AdminImportsPage() {
+export default async function AdminImportsPage() {
+  const auth = await requireAdminPage();
+  if (!auth.authorized) {
+    return auth.response;
+  }
+
   return (
     <div className="space-y-6">
       <div>

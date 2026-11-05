@@ -1,3 +1,4 @@
+import { requireAdminPage } from "@/server/authorization";
 import { listAdminProducts } from "@/server/services/product.service";
 import { AdminProductTable } from "@/components/admin/admin-product-table";
 import type { ProductStatus } from "@/types";
@@ -9,6 +10,11 @@ export default async function AdminProductsPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  const auth = await requireAdminPage();
+  if (!auth.authorized) {
+    return auth.response;
+  }
+
   const params = await searchParams;
   const q = typeof params.q === "string" ? params.q : "";
   const status =

@@ -8,8 +8,7 @@ import {
   Tags,
   Users,
 } from "lucide-react";
-import { getCurrentUser, isAdminUser } from "@/server/authorization";
-import { WorkspaceNotice } from "@/components/ui/workspace-notice";
+import { getCurrentUser } from "@/server/authorization";
 
 export const dynamic = "force-dynamic";
 
@@ -21,43 +20,6 @@ export default async function AdminLayout({
   const currentUser = await getCurrentUser();
   if (!currentUser) {
     redirect("/login");
-  }
-
-  if (!isAdminUser(currentUser)) {
-    return (
-      <div className="mx-auto max-w-3xl px-4 py-16">
-        <WorkspaceNotice
-          eyebrow="Access Restricted // 403 Forbidden"
-          title="Administrator Privileges Required"
-          description={
-            <>
-              Your account ({currentUser.email}) has role{" "}
-              <strong className="font-mono text-stone-900">
-                {currentUser.role}
-              </strong>
-              . Administrative operations are restricted to verified platform
-              administrators.
-            </>
-          }
-          actions={
-            <>
-              <Link
-                href="/account"
-                className="border border-stone-900 bg-stone-900 px-4 py-2 text-xs font-semibold tracking-wider text-white uppercase hover:bg-stone-800"
-              >
-                Return to Trade Account
-              </Link>
-              <Link
-                href="/catalogue"
-                className="border border-stone-300 bg-white px-4 py-2 text-xs font-semibold tracking-wider text-stone-900 uppercase hover:border-stone-900"
-              >
-                Browse Catalogue
-              </Link>
-            </>
-          }
-        />
-      </div>
-    );
   }
 
   const adminNav = [

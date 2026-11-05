@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { requireAdminPage } from "@/server/authorization";
 import { getAdminProductById } from "@/server/services/product.service";
 import { getAllTaxonomies } from "@/server/services/taxonomy.service";
 import { ProductEditorForm } from "@/components/admin/product-editor-form";
@@ -11,6 +12,11 @@ export default async function EditProductPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const auth = await requireAdminPage();
+  if (!auth.authorized) {
+    return auth.response;
+  }
+
   const { id } = await params;
 
   let product: Awaited<ReturnType<typeof getAdminProductById>>;

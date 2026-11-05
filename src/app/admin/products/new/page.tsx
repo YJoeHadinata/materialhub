@@ -1,9 +1,15 @@
+import { requireAdminPage } from "@/server/authorization";
 import { getAllTaxonomies } from "@/server/services/taxonomy.service";
 import { ProductEditorForm } from "@/components/admin/product-editor-form";
 
 export const dynamic = "force-dynamic";
 
 export default async function NewProductPage() {
+  const auth = await requireAdminPage();
+  if (!auth.authorized) {
+    return auth.response;
+  }
+
   const taxonomies = await getAllTaxonomies();
 
   return (

@@ -6,6 +6,8 @@ import { user as userTable } from "@/db/schema";
 import { AppError } from "@/lib/utils/api-response";
 import type { AuthenticatedUser, TradeStatus, UserRole } from "@/types";
 
+export * from "./page-guards";
+
 export function canAccessTradeWorkspace(user: {
   role: UserRole;
   tradeStatus: TradeStatus;
@@ -69,8 +71,13 @@ export async function getCurrentUser(
 
 export async function requireAuthenticatedUser(
   requestHeaders?: Headers,
+  overrideUser?: AuthenticatedUser | null,
 ): Promise<AuthenticatedUser> {
-  const currentUser = await getCurrentUser(requestHeaders);
+  const currentUser =
+    overrideUser !== undefined
+      ? overrideUser
+      : await getCurrentUser(requestHeaders);
+
   if (!currentUser) {
     throw new AppError(
       "UNAUTHENTICATED",
@@ -92,8 +99,12 @@ export async function requireAuthenticatedUser(
 
 export async function requireApprovedTradeMember(
   requestHeaders?: Headers,
+  overrideUser?: AuthenticatedUser | null,
 ): Promise<AuthenticatedUser> {
-  const currentUser = await requireAuthenticatedUser(requestHeaders);
+  const currentUser = await requireAuthenticatedUser(
+    requestHeaders,
+    overrideUser,
+  );
   if (!canAccessTradeWorkspace(currentUser)) {
     throw new AppError(
       "TRADE_ACCOUNT_NOT_APPROVED",
@@ -106,8 +117,12 @@ export async function requireApprovedTradeMember(
 
 export async function requireAdministrator(
   requestHeaders?: Headers,
+  overrideUser?: AuthenticatedUser | null,
 ): Promise<AuthenticatedUser> {
-  const currentUser = await requireAuthenticatedUser(requestHeaders);
+  const currentUser = await requireAuthenticatedUser(
+    requestHeaders,
+    overrideUser,
+  );
   if (!isAdminUser(currentUser)) {
     throw new AppError(
       "FORBIDDEN",

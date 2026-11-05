@@ -1,3 +1,4 @@
+import { requireAdminPage } from "@/server/authorization";
 import { listTradeAccounts } from "@/server/services/trade-account.service";
 import { TradeAccountManager } from "@/components/admin/trade-account-manager";
 import type { TradeStatus } from "@/types";
@@ -9,6 +10,11 @@ export default async function AdminTradeAccountsPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  const auth = await requireAdminPage();
+  if (!auth.authorized) {
+    return auth.response;
+  }
+
   const params = await searchParams;
   const q = typeof params.q === "string" ? params.q : "";
   const status =

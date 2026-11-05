@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import { canAccessTradeWorkspace, getCurrentUser } from "@/server/authorization";
+import { requireApprovedTradeMemberPage } from "@/server/authorization";
 import { getMoodboardByIdForUser } from "@/server/services/moodboard.service";
 import { queryPublicCatalogue } from "@/server/services/product.service";
 import { MoodboardDetailEditor } from "@/components/moodboards/moodboard-detail-editor";
@@ -15,14 +15,11 @@ export default async function MoodboardDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const currentUser = await getCurrentUser();
-  if (!currentUser) {
-    redirect("/login");
+  const auth = await requireApprovedTradeMemberPage();
+  if (!auth.authorized) {
+    return auth.response;
   }
-
-  if (!canAccessTradeWorkspace(currentUser)) {
-    redirect("/moodboards");
-  }
+  const currentUser = auth.user;
 
   const { id } = await params;
 

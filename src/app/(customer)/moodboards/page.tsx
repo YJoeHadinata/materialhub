@@ -1,56 +1,16 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { canAccessTradeWorkspace, getCurrentUser } from "@/server/authorization";
+import { requireApprovedTradeMemberPage } from "@/server/authorization";
 import { listUserMoodboards } from "@/server/services/moodboard.service";
 import { MoodboardWorkspaceList } from "@/components/moodboards/moodboard-workspace-list";
-import { WorkspaceNotice } from "@/components/ui/workspace-notice";
 
 export const dynamic = "force-dynamic";
 
 export default async function MoodboardsPage() {
-  const currentUser = await getCurrentUser();
-  if (!currentUser) {
-    redirect("/login");
+  const auth = await requireApprovedTradeMemberPage();
+  if (!auth.authorized) {
+    return auth.response;
   }
-
-  const isApproved = canAccessTradeWorkspace(currentUser);
-  if (!isApproved) {
-    return (
-      <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6">
-        <WorkspaceNotice
-          eyebrow="Trade Workspace Access"
-          title="Approved Trade Account Required"
-          description={
-            <>
-              Your trade account is currently{" "}
-              <strong className="font-mono text-stone-900">
-                {currentUser.tradeStatus}
-              </strong>
-              . Only approved trade members may create and manage project
-              moodboards. You can continue exploring the public material
-              catalogue while your application is under review.
-            </>
-          }
-          actions={
-            <>
-              <Link
-                href="/account"
-                className="border border-stone-900 bg-stone-900 px-5 py-2.5 text-xs font-semibold tracking-wider text-white uppercase hover:bg-stone-800"
-              >
-                View Account Status
-              </Link>
-              <Link
-                href="/catalogue"
-                className="border border-stone-300 bg-white px-5 py-2.5 text-xs font-semibold tracking-wider text-stone-900 uppercase hover:border-stone-900"
-              >
-                Browse Material Catalogue
-              </Link>
-            </>
-          }
-        />
-      </div>
-    );
-  }
+  const currentUser = auth.user;
 
   const boards = await listUserMoodboards(currentUser.id);
 
