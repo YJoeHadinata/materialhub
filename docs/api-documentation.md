@@ -118,7 +118,49 @@ Updates a trade member's status (`{ status, reason? }`) and records an audit log
 Validates (`mode: "preview"`) or transactionally imports (`mode: "execute"`) a CSV product batch (`{ csvContent, mode }`).
 
 ### `POST /api/v1/admin/uploads`
-Accepts `multipart/form-data` with a `file` field (JPEG, PNG, WebP up to 10 MB) and stores it via the configured `StorageProvider`.
+Accepts `multipart/form-data` with a `file` field (JPEG, PNG, WebP up to 10 MB).
+- **Processing & Security:**
+  - Content and magic-byte inspection via Sharp (`processAndOptimizeImage`), rejecting corrupt buffers, disguised scripts/text, and declared vs detected MIME mismatches (`422 Unprocessable Content`).
+  - Guards against decompression bombs via input pixel ceiling (`limitInputPixels: 25_000_000`).
+  - Automatically corrects EXIF orientation and strips all EXIF and GPS metadata.
+  - Converts primary image to WebP and pre-generates responsive WebP variants (`480w`, `960w`, `1600w` without upscaling).
+- **Response Format:**
+  ```json
+  {
+    "data": {
+      "storageKey": "products/uuid.webp",
+      "imageUrl": "/api/v1/storage/products/uuid.webp",
+      "width": 1920,
+      "height": 1080,
+      "variants": [
+        {
+          "width": 480,
+          "height": 270,
+          "format": "webp",
+          "storageKey": "products/uuid-480w.webp",
+          "imageUrl": "/api/v1/storage/products/uuid-480w.webp",
+          "sizeBytes": 18450
+        },
+        {
+          "width": 960,
+          "height": 540,
+          "format": "webp",
+          "storageKey": "products/uuid-960w.webp",
+          "imageUrl": "/api/v1/storage/products/uuid-960w.webp",
+          "sizeBytes": 45120
+        },
+        {
+          "width": 1600,
+          "height": 900,
+          "format": "webp",
+          "storageKey": "products/uuid-1600w.webp",
+          "imageUrl": "/api/v1/storage/products/uuid-1600w.webp",
+          "sizeBytes": 98200
+        }
+      ]
+    }
+  }
+  ```
 
 ---
 

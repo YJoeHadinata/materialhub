@@ -51,6 +51,7 @@ All versions were verified against the live npm registry on **2026-11-04** and p
 | Authentication | Better Auth (PostgreSQL Drizzle Adapter) | `1.7.15` |
 | Validation | Zod | `4.6.7` |
 | Object Storage | AWS SDK v3 S3 Client & Presigner | `3.1161.0` |
+| Image Processing | Sharp | `0.35.5` |
 | Unit & Integration Testing | Vitest | `5.1.0` |
 | End-to-End Testing | Playwright | `1.64.1` |
 | Linting | ESLint & `eslint-config-next` | `9.39.5` / `16.4.5` |
@@ -195,10 +196,9 @@ MaterialHub is engineered with a production-style architecture, with known limit
 
 1. **In-Memory Rate Limiting:** Rate limiting on sensitive endpoints (`/api/v1/admin/products/import`, `/api/v1/admin/uploads`, and Better Auth auth endpoints) is implemented in-memory using an in-process sliding window (`src/lib/utils/rate-limit.ts`). This is scoped per process instance and is not distributed across serverless instances or multi-region workers. Production serverless deployments require an external key-value store such as Redis or Upstash.
 2. **No Password Reset or Email Verification Flow:** Better Auth is configured for direct email and password authentication. No self-service password reset flow, reset token dispatch, or email verification flows are implemented in the UI or backend services. User onboarding relies on direct trade registration and administrator status approval.
-3. **Upload Content Validation:** Image upload verification (`validateImageUploadInput` in `src/lib/storage/index.ts`) strictly allow-lists file extensions (`.jpg`, `.jpeg`, `.png`, `.webp`), request MIME types (`image/jpeg`, `image/png`, `image/webp`), and file size limits (<= 10 MB). It does not perform binary magic-byte inspection on file buffers.
-4. **Object Storage Provider in Local Mode:** When S3 credentials (`OBJECT_STORAGE_ACCESS_KEY`, `OBJECT_STORAGE_SECRET_KEY`, `OBJECT_STORAGE_ENDPOINT`) are not set, `STORAGE_DRIVER="local"` uses `LocalDevelopmentStorageProvider` and serves uploaded images via `/api/v1/storage/[...key]`. If `STORAGE_DRIVER="s3"` is configured with missing credentials, initialization fails immediately with an explicit error. In production, set `STORAGE_DRIVER="s3"` with managed S3 or Cloudflare R2 bucket credentials.
-5. **Synchronous CSV Import Limit:** Bulk CSV import processes up to 500 rows per synchronous transaction (`MAX_CSV_IMPORT_ROWS = 500`), covering standard B2B architectural batches without external background workers. Larger catalogues require an asynchronous job queue (e.g. BullMQ or AWS SQS).
-6. **Continuous Integration Scope:** The GitHub Actions pipeline (`.github/workflows/ci.yml`) executes ESLint, TypeScript strict typechecking, database migrations against PostgreSQL 18, Vitest unit and integration suites, and the production Next.js build. Full Playwright E2E suites are run locally against the test database with browser engines installed.
+3. **Object Storage Provider in Local Mode:** When S3 credentials (`OBJECT_STORAGE_ACCESS_KEY`, `OBJECT_STORAGE_SECRET_KEY`, `OBJECT_STORAGE_ENDPOINT`) are not set, `STORAGE_DRIVER="local"` uses `LocalDevelopmentStorageProvider` and serves uploaded images via `/api/v1/storage/[...key]`. If `STORAGE_DRIVER="s3"` is configured with missing credentials, initialization fails immediately with an explicit error. In production, set `STORAGE_DRIVER="s3"` with managed S3 or Cloudflare R2 bucket credentials.
+4. **Synchronous CSV Import Limit:** Bulk CSV import processes up to 500 rows per synchronous transaction (`MAX_CSV_IMPORT_ROWS = 500`), covering standard B2B architectural batches without external background workers. Larger catalogues require an asynchronous job queue (e.g. BullMQ or AWS SQS).
+5. **Continuous Integration Scope:** The GitHub Actions pipeline (`.github/workflows/ci.yml`) executes ESLint, TypeScript strict typechecking, database migrations against PostgreSQL 18, Vitest unit and integration suites, and the production Next.js build. Full Playwright E2E suites are run locally against the test database with browser engines installed.
 
 ---
 

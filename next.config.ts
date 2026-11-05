@@ -1,19 +1,66 @@
 import type { NextConfig } from "next";
 
+function getRemotePatterns() {
+  const patterns: NonNullable<NonNullable<NextConfig["images"]>["remotePatterns"]> = [
+    {
+      protocol: "https",
+      hostname: "images.unsplash.com",
+    },
+    {
+      protocol: "http",
+      hostname: "localhost",
+    },
+    {
+      protocol: "http",
+      hostname: "127.0.0.1",
+    },
+  ];
+
+  const imagePublicBaseUrl = process.env.IMAGE_PUBLIC_BASE_URL;
+  if (imagePublicBaseUrl) {
+    try {
+      const parsed = new URL(imagePublicBaseUrl);
+      const protocol = parsed.protocol.replace(":", "") as "http" | "https";
+      patterns.push({
+        protocol,
+        hostname: parsed.hostname,
+        port: parsed.port || undefined,
+        pathname: parsed.pathname ? `${parsed.pathname.replace(/\/$/, "")}/**` : "/**",
+      });
+    } catch {
+      // Ignore invalid URL format
+    }
+  }
+
+  const s3Endpoint = process.env.OBJECT_STORAGE_ENDPOINT;
+  if (s3Endpoint) {
+    try {
+      const parsed = new URL(s3Endpoint);
+      const protocol = parsed.protocol.replace(":", "") as "http" | "https";
+      patterns.push({
+        protocol,
+        hostname: parsed.hostname,
+        port: parsed.port || undefined,
+        pathname: parsed.pathname ? `${parsed.pathname.replace(/\/$/, "")}/**` : "/**",
+      });
+    } catch {
+      // Ignore invalid URL format
+    }
+  }
+
+  return patterns;
+}
+
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   allowedDevOrigins: ["localhost", "127.0.0.1"],
   images: {
     formats: ["image/avif", "image/webp"],
-    remotePatterns: [
+    remotePatterns: getRemotePatterns(),
+    localPatterns: [
       {
-        protocol: "https",
-        hostname: "images.unsplash.com",
-      },
-      {
-        protocol: "http",
-        hostname: "localhost",
+        pathname: "/api/v1/storage/**",
       },
     ],
   },

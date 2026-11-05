@@ -1,5 +1,7 @@
+import Image from "next/image";
 import { ArrowDown, ArrowUp, Star, Trash2, Upload } from "lucide-react";
 import type { EditableImage } from "./types";
+import { isSvgImageUrl } from "@/lib/utils/image";
 
 interface ProductImageSectionProps {
   images: EditableImage[];
@@ -118,12 +120,14 @@ export function ProductImageSection({
               className="border border-stone-200 bg-stone-50 p-3 flex flex-col justify-between"
             >
               <div>
-                <div className="aspect-4/3 overflow-hidden border border-stone-200 bg-white">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
+                <div className="relative aspect-4/3 overflow-hidden border border-stone-200 bg-white">
+                  <Image
                     src={img.imageUrl}
                     alt={img.altText}
-                    className="h-full w-full object-cover"
+                    fill
+                    sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
+                    className="object-cover"
+                    unoptimized={isSvgImageUrl(img.imageUrl)}
                   />
                 </div>
                 <div className="mt-2">
