@@ -1,7 +1,9 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowDown, ArrowUp, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { MoodboardDetail } from "@/server/services/moodboard.service";
+import { isSvgImageUrl } from "@/lib/utils/image";
 
 type MoodboardItem = MoodboardDetail["items"][number];
 
@@ -24,13 +26,15 @@ export function MoodboardItemCard({
 }: MoodboardItemCardProps) {
   return (
     <article className="flex flex-col sm:flex-row border border-stone-200 bg-white overflow-hidden">
-      <div className="sm:w-44 shrink-0 bg-stone-100 aspect-4/3 sm:aspect-auto">
+      <div className="relative sm:w-44 shrink-0 bg-stone-100 aspect-4/3 sm:aspect-auto">
         {item.product.primaryImageUrl && (
-          /* eslint-disable-next-line @next/next/no-img-element */
-          <img
+          <Image
             src={item.product.primaryImageUrl}
             alt={item.product.primaryImageAlt}
-            className="h-full w-full object-cover"
+            fill
+            sizes="(min-width: 640px) 176px, 100vw"
+            className="object-cover"
+            unoptimized={isSvgImageUrl(item.product.primaryImageUrl)}
           />
         )}
       </div>

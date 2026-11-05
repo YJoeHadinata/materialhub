@@ -1,6 +1,8 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 import type { AuthenticatedUser, ProductListItem } from "@/types";
+import { isSvgImageUrl } from "@/lib/utils/image";
 
 interface HeroSectionProps {
   heroSwatches: ProductListItem[];
@@ -102,20 +104,23 @@ export function HeroSection({
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {heroSwatches.map((swatch) => (
+              {heroSwatches.map((swatch, idx) => (
                 <Link
                   key={swatch.id}
                   href={`/products/${swatch.slug}`}
                   aria-label={`Inspect specimen ${swatch.name}`}
                   className="surface-card group flex flex-col border border-stone-200/90 bg-white"
                 >
-                  <div className="aspect-16/10 overflow-hidden bg-stone-100">
+                  <div className="relative aspect-16/10 overflow-hidden bg-stone-100">
                     {swatch.primaryImage && (
-                      /* eslint-disable-next-line @next/next/no-img-element */
-                      <img
+                      <Image
                         src={swatch.primaryImage.imageUrl}
                         alt={swatch.primaryImage.altText}
-                        className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
+                        fill
+                        priority={idx === 0}
+                        sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
+                        className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
+                        unoptimized={isSvgImageUrl(swatch.primaryImage.imageUrl)}
                       />
                     )}
                   </div>

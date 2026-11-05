@@ -1,7 +1,9 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowUpRight } from "lucide-react";
 import type { AuthenticatedUser, ProductListItem } from "@/types";
 import { SaveToMoodboardDialog } from "@/components/moodboards/save-to-moodboard-dialog";
+import { isSvgImageUrl } from "@/lib/utils/image";
 
 export function ProductCard({
   product,
@@ -23,14 +25,13 @@ export function ProductCard({
         aria-label={`View specifications for ${product.name}`}
         className="relative block aspect-4/3 overflow-hidden bg-stone-100"
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <Image
           src={imageUrl}
           alt={imageAlt}
-          loading="lazy"
-          width={product.primaryImage?.width ?? 1200}
-          height={product.primaryImage?.height ?? 900}
-          className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
+          fill
+          sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+          className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
+          unoptimized={isSvgImageUrl(imageUrl)}
         />
       </Link>
 

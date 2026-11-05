@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Plus, Trash2 } from "lucide-react";
 import type { MoodboardSummary } from "@/server/services/moodboard.service";
 import { Callout } from "@/components/ui/callout";
 import { formatDate } from "@/lib/utils/format";
+import { isSvgImageUrl } from "@/lib/utils/image";
 
 export function MoodboardWorkspaceList({
   initialBoards,
@@ -161,13 +163,16 @@ export function MoodboardWorkspaceList({
                 >
                   {board.previewImages.length > 0 ? (
                     board.previewImages.map((img, i) => (
-                      /* eslint-disable-next-line @next/next/no-img-element */
-                      <img
-                        key={i}
-                        src={img.imageUrl}
-                        alt={img.altText}
-                        className="h-full w-full object-cover"
-                      />
+                      <div key={i} className="relative h-full w-full overflow-hidden">
+                        <Image
+                          src={img.imageUrl}
+                          alt={img.altText}
+                          fill
+                          sizes="(min-width: 1024px) 16vw, (min-width: 768px) 25vw, 50vw"
+                          className="object-cover"
+                          unoptimized={isSvgImageUrl(img.imageUrl)}
+                        />
+                      </div>
                     ))
                   ) : (
                     <div className="col-span-2 flex items-center justify-center bg-stone-100 text-xs tracking-wider text-stone-500 uppercase">

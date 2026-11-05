@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
+import { isSvgImageUrl } from "@/lib/utils/image";
 
 export function ProductGallery({
   images,
@@ -32,13 +34,14 @@ export function ProductGallery({
     <div className="space-y-3.5">
       <div className="group relative aspect-4/3 overflow-hidden border border-stone-200/90 bg-stone-100">
         {activeImage && (
-          /* eslint-disable-next-line @next/next/no-img-element */
-          <img
+          <Image
             src={activeImage.imageUrl}
             alt={activeImage.altText}
-            width={activeImage.width}
-            height={activeImage.height}
-            className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.02]"
+            fill
+            priority
+            sizes="(min-width: 1024px) 50vw, 100vw"
+            className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.02]"
+            unoptimized={isSvgImageUrl(activeImage.imageUrl)}
           />
         )}
       </div>
@@ -58,17 +61,19 @@ export function ProductGallery({
                 onClick={() => setSelectedIndex(idx)}
                 aria-label={`View image ${idx + 1}: ${image.altText}`}
                 aria-current={isSelected ? "true" : undefined}
-                className={`aspect-4/3 overflow-hidden border transition-all duration-150 ${
+                className={`relative aspect-4/3 overflow-hidden border transition-all duration-150 ${
                   isSelected
                     ? "border-stone-950 ring-2 ring-stone-950 ring-offset-1"
                     : "border-stone-200 opacity-75 hover:border-stone-400 hover:opacity-100"
                 }`}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+                <Image
                   src={image.imageUrl}
                   alt={image.altText}
-                  className="h-full w-full object-cover"
+                  fill
+                  sizes="(min-width: 1024px) 10vw, 20vw"
+                  className="object-cover"
+                  unoptimized={isSvgImageUrl(image.imageUrl)}
                 />
               </button>
             );
