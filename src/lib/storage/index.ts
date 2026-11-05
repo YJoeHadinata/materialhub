@@ -89,14 +89,29 @@ export class S3StorageProvider implements StorageProvider {
   private readonly bucket: string;
   private readonly publicBaseUrl: string;
 
-  constructor() {
-    const endpoint = process.env.OBJECT_STORAGE_ENDPOINT;
-    const region = process.env.OBJECT_STORAGE_REGION ?? "auto";
-    const accessKeyId = process.env.OBJECT_STORAGE_ACCESS_KEY ?? "";
-    const secretAccessKey = process.env.OBJECT_STORAGE_SECRET_KEY ?? "";
-    this.bucket = process.env.OBJECT_STORAGE_BUCKET ?? "materialhub-assets";
+  constructor(config?: {
+    endpoint?: string;
+    region?: string;
+    accessKeyId?: string;
+    secretAccessKey?: string;
+    bucket?: string;
+    publicBaseUrl?: string;
+  }) {
+    const endpoint = config?.endpoint ?? process.env.OBJECT_STORAGE_ENDPOINT;
+    const region =
+      config?.region ?? process.env.OBJECT_STORAGE_REGION ?? "auto";
+    const accessKeyId =
+      config?.accessKeyId ?? process.env.OBJECT_STORAGE_ACCESS_KEY ?? "";
+    const secretAccessKey =
+      config?.secretAccessKey ?? process.env.OBJECT_STORAGE_SECRET_KEY ?? "";
+    this.bucket =
+      config?.bucket ??
+      process.env.OBJECT_STORAGE_BUCKET ??
+      "materialhub-assets";
     this.publicBaseUrl = (
-      process.env.IMAGE_PUBLIC_BASE_URL ?? ""
+      config?.publicBaseUrl ??
+      process.env.IMAGE_PUBLIC_BASE_URL ??
+      ""
     ).replace(/\/$/, "");
 
     this.client = new S3Client({
@@ -156,9 +171,10 @@ export class LocalDevelopmentStorageProvider implements StorageProvider {
   private readonly baseDir: string;
   private readonly publicBaseUrl: string;
 
-  constructor() {
-    this.baseDir = path.resolve(process.cwd(), ".local-storage");
+  constructor(baseDir?: string, publicBaseUrl?: string) {
+    this.baseDir = baseDir ?? path.resolve(process.cwd(), ".local-storage");
     this.publicBaseUrl = (
+      publicBaseUrl ??
       process.env.IMAGE_PUBLIC_BASE_URL ??
       "http://localhost:3000/api/v1/storage"
     ).replace(/\/$/, "");
@@ -170,9 +186,12 @@ export class LocalDevelopmentStorageProvider implements StorageProvider {
       input.fileName,
       input.folder ?? "products",
     );
+    const rootWithSep = this.baseDir.endsWith(path.sep)
+      ? this.baseDir
+      : `${this.baseDir}${path.sep}`;
     const targetPath = path.resolve(this.baseDir, storageKey);
 
-    if (!targetPath.startsWith(this.baseDir)) {
+    if (!targetPath.startsWith(rootWithSep)) {
       throw new AppError("INVALID_STORAGE_KEY", "Invalid storage path.", 400);
     }
 
@@ -186,8 +205,11 @@ export class LocalDevelopmentStorageProvider implements StorageProvider {
   }
 
   async delete(storageKey: string): Promise<void> {
+    const rootWithSep = this.baseDir.endsWith(path.sep)
+      ? this.baseDir
+      : `${this.baseDir}${path.sep}`;
     const targetPath = path.resolve(this.baseDir, storageKey);
-    if (!targetPath.startsWith(this.baseDir)) {
+    if (!targetPath.startsWith(rootWithSep)) {
       return;
     }
     try {
@@ -198,15 +220,38 @@ export class LocalDevelopmentStorageProvider implements StorageProvider {
   }
 }
 
-export function getStorageProvider(): StorageProvider {
-  const driver = process.env.STORAGE_DRIVER ?? "local";
-  const hasS3Credentials =
-    Boolean(process.env.OBJECT_STORAGE_ACCESS_KEY) &&
-    Boolean(process.env.OBJECT_STORAGE_SECRET_KEY) &&
-    Boolean(process.env.OBJECT_STORAGE_BUCKET);
+export function getStorageProvider(
+  env: Partial<NodeJS.ProcessEnv> = process.env,
+): StorageProvider {
+  const driver = env.STORAGE_DRIVER ?? "local";
 
-  if (driver === "s3" && hasS3Credentials) {
-    return new S3StorageProvider();
+  if (driver === "s3") {
+    const hasS3Credentials =
+      Boolean(env.OBJECT_STORAGE_ACCESS_KEY) &&
+      Boolean(env.OBJECT_STORAGE_SECRET_KEY) &&
+      Boolean(env.OBJECT_STORAGE_BUCKET);
+
+    if (!hasS3Credentials) {
+      throw new Error(
+        "S3 storage driver is configured (STORAGE_DRIVER=s3) but required credentials or bucket are missing. " +
+          "Ensure OBJECT_STORAGE_ACCESS_KEY, OBJECT_STORAGE_SECRET_KEY, and OBJECT_STORAGE_BUCKET are set.",
+      );
+    }
+
+    return new S3StorageProvider({
+      endpoint: env.OBJECT_STORAGE_ENDPOINT,
+      region: env.OBJECT_STORAGE_REGION ?? "auto",
+      accessKeyId: env.OBJECT_STORAGE_ACCESS_KEY,
+      secretAccessKey: env.OBJECT_STORAGE_SECRET_KEY,
+      bucket: env.OBJECT_STORAGE_BUCKET,
+      publicBaseUrl: env.IMAGE_PUBLIC_BASE_URL,
+    });
+  }
+
+  if (driver === "local" && env.NODE_ENV === "production") {
+    console.warn(
+      "[Storage] Warning: Using local storage driver in production environment. Files will be stored on local disk (.local-storage).",
+    );
   }
 
   return new LocalDevelopmentStorageProvider();

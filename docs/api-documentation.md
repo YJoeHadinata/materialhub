@@ -119,3 +119,17 @@ Validates (`mode: "preview"`) or transactionally imports (`mode: "execute"`) a C
 
 ### `POST /api/v1/admin/uploads`
 Accepts `multipart/form-data` with a `file` field (JPEG, PNG, WebP up to 10 MB) and stores it via the configured `StorageProvider`.
+
+---
+
+## 4. Local Storage Asset Serving (`/api/v1/storage/[...key]`)
+
+*Active exclusively when `STORAGE_DRIVER === "local"`.*
+
+### `GET /api/v1/storage/[...key]`
+Serves local development assets stored in `.local-storage`.
+- **Security & Constraints:**
+  - Enforces directory containment (`baseDir + path.sep`), rejecting `../` traversal attempts (`404 Not Found`).
+  - Restricts extensions to `.jpg`, `.jpeg`, `.png`, and `.webp` (`404 Not Found` for other extensions).
+  - Returns `404 Not Found` when `STORAGE_DRIVER !== "local"`.
+- **Headers:** Sets appropriate `Content-Type`, `X-Content-Type-Options: nosniff`, and `Cache-Control: public, max-age=31536000, immutable`.

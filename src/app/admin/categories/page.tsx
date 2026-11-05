@@ -1,9 +1,15 @@
+import { requireAdminPage } from "@/server/authorization";
 import { getAllTaxonomies } from "@/server/services/taxonomy.service";
 import { TaxonomyManager } from "@/components/admin/taxonomy-manager";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminCategoriesPage() {
+  const auth = await requireAdminPage();
+  if (!auth.authorized) {
+    return auth.response;
+  }
+
   const taxonomies = await getAllTaxonomies();
 
   return (

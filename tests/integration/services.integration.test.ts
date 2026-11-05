@@ -236,13 +236,37 @@ describe("MaterialHub Integration Tests — PostgreSQL Services & Transactions",
     expect(reordered.items[0]?.id).toBe(secondItemId);
     expect(reordered.items[1]?.id).toBe(firstItemId);
 
-    // Enforce ownership: Member Two cannot read or update Member One's moodboard
+    // Enforce ownership: Member Two cannot read, update, add to, or delete Member One's moodboard
     await expect(
       getMoodboardByIdForUser(board.id, memberTwoUserId),
     ).rejects.toThrowError(/permission/i);
 
     await expect(
       updateMoodboard(board.id, { name: "Hijacked" }, memberTwoUserId),
+    ).rejects.toThrowError(/permission/i);
+
+    await expect(
+      addProductToMoodboard(
+        board.id,
+        { productId: prodA.id },
+        memberTwoUserId,
+      ),
+    ).rejects.toThrowError(/permission/i);
+
+    await expect(
+      removeMoodboardItem(board.id, firstItemId, memberTwoUserId),
+    ).rejects.toThrowError(/permission/i);
+
+    await expect(
+      reorderMoodboardItems(
+        board.id,
+        { itemIds: [firstItemId] },
+        memberTwoUserId,
+      ),
+    ).rejects.toThrowError(/permission/i);
+
+    await expect(
+      deleteMoodboard(board.id, memberTwoUserId),
     ).rejects.toThrowError(/permission/i);
 
     // Remove item & delete moodboard
